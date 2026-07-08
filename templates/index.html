@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Indian Stock Market & News Terminal</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!-- TradingView Lightweight Charts CDN for Candlestick charts -->
+    <script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6h-6z"/>
+                </svg>
+            </div>
+            <h1 class="brand-name">PulseMarket Terminal</h1>
+        </div>
+        <div class="market-status">
+            <span class="time-display" id="live-clock">--:--:--</span>
+            <div class="status-badge">
+                <span class="pulse-dot" id="connection-dot"></span>
+                <span id="connection-status">Connecting...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Top Scrolling Ticker Tape -->
+    <div class="ticker-container">
+        <div class="ticker-wrap">
+            <div class="ticker" id="ticker-tape">
+                <!-- Ticker items dynamically loaded -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid Dashboard -->
+    <main>
+        <!-- Left Sidebar: Watchlist -->
+        <section class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px;">
+                        <path d="M8 1.783C7.015.746 5.617 0 4 0A4 4 0 0 0 0 4c0 2.5 2.5 4.75 9 10 6.5-5.25 9-7.75 9-10a4 4 0 0 0-4-4c-1.617 0-3.015.746-4 1.783z"/>
+                    </svg>
+                    Market Watchlist
+                </h2>
+            </div>
+            <div class="panel-body">
+                <div class="search-box">
+                    <input type="text" id="watchlist-search" class="search-input" placeholder="Search Symbol (e.g. RELIANCE)...">
+                </div>
+                <table class="watchlist-table">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th style="text-align: right;">Price (₹)</th>
+                            <th style="text-align: right;">Change%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watchlist-body">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Center Workspace -->
+        <section class="center-container">
+            <!-- Top Indices row -->
+            <div class="indices-grid">
+                <div class="index-card" id="card-NIFTY-50">
+                    <div class="index-name">NIFTY 50</div>
+                    <div class="index-price" id="idx-price-NIFTY-50">24,205.65</div>
+                    <div class="index-change-wrap" id="idx-change-NIFTY-50">
+                        <span>+0.00</span>
+                        <span>(+0.00%)</span>
+                    </div>
+                </div>
+                <div class="index-card" id="card-SENSEX">
+                    <div class="index-name">SENSEX</div>
+                    <div class="index-price" id="idx-price-SENSEX">77,532.86</div>
+                    <div class="index-change-wrap" id="idx-change-SENSEX">
+                        <span>+0.00</span>
+                        <span>(+0.00%)</span>
+                    </div>
+                </div>
+                <div class="index-card" id="card-NIFTY-BANK">
+                    <div class="index-name">NIFTY BANK</div>
+                    <div class="index-price" id="idx-price-NIFTY-BANK">57,762.25</div>
+                    <div class="index-change-wrap" id="idx-change-NIFTY-BANK">
+                        <span>+0.00</span>
+                        <span>(+0.00%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Grid (Chart + Order Book) -->
+            <div class="detail-grid">
+                <!-- Live Chart Panel -->
+                <div class="panel chart-container">
+                    <div class="panel-header">
+                        <div class="selected-info">
+                            <span class="selected-name" id="detail-name">--</span>
+                            <span class="selected-symbol" id="detail-symbol">--</span>
+                        </div>
+                        <div class="timeline-selectors">
+                            <button id="tl-Live" class="timeline-btn active" onclick="changeTimeline('Live')">Live</button>
+                            <button id="tl-1m" class="timeline-btn" onclick="changeTimeline('1m')">1 Min</button>
+                            <button id="tl-1h" class="timeline-btn" onclick="changeTimeline('1h')">1 Hour</button>
+                            <button id="tl-1d" class="timeline-btn" onclick="changeTimeline('1d')">1 Day</button>
+                        </div>
+                    </div>
+                    <div class="panel-body" style="display: flex; flex-direction: column;">
+                        <div class="selected-metrics">
+                            <span class="selected-price" id="detail-price">0.00</span>
+                            <div class="index-change-wrap" id="detail-change-wrap" style="font-size: 1rem;">
+                                <span id="detail-change">0.00</span>
+                                <span id="detail-change-pct">(0.00%)</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.5rem 0 1rem 0; display: flex; gap: 1rem; align-items: center;">
+                            <span>HIGH: <strong id="detail-high" class="gain" style="font-family: var(--font-mono);">0.00</strong></span>
+                            <span>LOW: <strong id="detail-low" class="loss" style="font-family: var(--font-mono);">0.00</strong></span>
+                            <span>VOLUME: <strong id="detail-vol" style="font-family: var(--font-mono);">0</strong></span>
+                        </div>
+                        <!-- Custom Chart Annotations / Markers Form -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 0.6rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-accent); text-transform: uppercase; letter-spacing: 0.5px;">Add Custom Chart Marker</span>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <input type="text" id="marker-text" placeholder="Marker instruction (e.g. Buy Support)" style="flex: 1; min-width: 150px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: #fff;">
+                                <select id="marker-shape" style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.25rem 0.5rem; font-size: 0.75rem; color: #fff; cursor: pointer;">
+                                    <option value="arrowUp">Buy Signal (Arrow Up)</option>
+                                    <option value="arrowDown">Sell Signal (Arrow Down)</option>
+                                    <option value="circle">Info Circle</option>
+                                    <option value="square">Note Square</option>
+                                </select>
+                                <button onclick="addCustomChartMarker()" style="background: var(--color-accent); border: none; border-radius: 4px; padding: 0.25rem 0.75rem; font-size: 0.75rem; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s;">Add Marker</button>
+                            </div>
+                        </div>
+                        <!-- TradingView Lightweight Charts Container -->
+                        <div class="canvas-wrap" id="chart-wrap">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Market Depth / Order Book Panel -->
+                <div class="panel orderbook-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px;">
+                                <path d="M1 11.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13a.5.5 0 0 1-.5-.5z"/>
+                            </svg>
+                            Market Depth (NSE)
+                        </h2>
+                    </div>
+                    <div class="panel-body" style="display: flex; flex-direction: column;">
+                        <!-- Ratio Bar -->
+                        <div class="depth-ratio-bar">
+                            <div class="depth-ratio-labels">
+                                <span class="gain" id="buyer-ratio-label">Buyers: 50%</span>
+                                <span class="loss" id="seller-ratio-label">Sellers: 50%</span>
+                            </div>
+                            <div class="depth-bar-wrapper">
+                                <div class="depth-bar-buyer" id="buyer-ratio-bar" style="width: 50%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- 5-Level Bids and Asks -->
+                        <div class="depth-lists">
+                            <table class="depth-table">
+                                <thead>
+                                    <tr>
+                                        <th style="color: var(--color-buyer);">Bid Price (₹)</th>
+                                        <th style="text-align: right; color: var(--color-buyer);">Qty</th>
+                                        <th style="color: var(--color-loss);">Ask Price (₹)</th>
+                                        <th style="text-align: right; color: var(--color-loss);">Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="depth-table-body">
+                                    <!-- Dynamic rows loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="total-volume-row">
+                            <span>TOTAL BUY: <span class="gain" id="total-buy-qty">0</span></span>
+                            <span>TOTAL SELL: <span class="loss" id="total-sell-qty">0</span></span>
+                        </div>
+
+                        <!-- Executed Trades Log -->
+                        <div class="trades-log">
+                            <h3 class="trades-title">Live Executed Trades</h3>
+                            <div class="trades-list" id="trades-list-body">
+                                <!-- Trades populate here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automated Trading Alerts Panel -->
+            <div class="panel alerts-panel">
+                <div class="panel-header">
+                    <h2 class="panel-title" style="color: var(--color-accent);">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px; fill: var(--color-accent);">
+                            <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2zM8 1.918l-.797.161A4.002 4.002 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4.002 4.002 0 0 0-3.203-3.92L8 1.917zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5.002 5.002 0 0 1 13 6c0 .88.32 4.2 1.22 6z"/>
+                        </svg>
+                        Automated Trading Signals & Alerts
+                    </h2>
+                    <span class="status-badge" style="font-size: 0.65rem; border-color: rgba(99, 102, 241, 0.3); color: var(--color-accent);" id="alerts-count">0 Signals</span>
+                </div>
+                <div class="panel-body" style="padding: 0; max-height: 140px; overflow-y: auto;">
+                    <div class="alerts-log-container" id="alerts-log-body">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.85rem;">
+                            Scanning markets. Waiting for pattern or wave signals...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Sidebar: Financial News Feed -->
+        <section class="panel news-feed">
+            <div class="panel-header">
+                <h2 class="panel-title">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px;">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                    Live Business News
+                </h2>
+                <span class="status-badge" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;" id="news-refresh-indicator">30s Sync</span>
+            </div>
+            <div class="panel-body" id="news-feed-body">
+                <div class="news-list" id="news-cards-container">
+                    <div style="text-align: center; color: var(--text-secondary); margin-top: 2rem; font-size: 0.85rem;">
+                        Fetching portal feeds...
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+*.log
+
+# Editor Settings
+.vscode/
+.idea/
+.DS_Store
+
+# Local App files
+start_terminal.bat
+.agents/
+.gemini/
