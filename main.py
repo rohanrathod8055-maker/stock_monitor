@@ -588,7 +588,7 @@ async def startup_event():
 
 @app.get("/")
 async def get_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 connected_clients: Set[WebSocket] = set()
 
