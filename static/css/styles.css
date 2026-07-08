@@ -416,6 +416,7 @@ main {
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-width: 0;
 }
 
 .chart-header {
@@ -463,6 +464,8 @@ main {
 .canvas-wrap {
     flex: 1;
     min-height: 0;
+    min-width: 0;
+    width: 100%;
     position: relative;
 }
 
