@@ -54,6 +54,7 @@ def is_market_open() -> bool:
 # Mount static and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+templates.env.cache = None  # Disable Jinja2 cache to resolve Python 3.14 Starlette cache key TypeErrors
 
 # Global state for news headlines and stocks
 news_headlines: List[Dict] = []
