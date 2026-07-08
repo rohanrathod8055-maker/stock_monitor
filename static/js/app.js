@@ -64,7 +64,7 @@ function initTradingViewChart() {
         timeScale: {
             borderColor: 'rgba(255, 255, 255, 0.06)',
             timeVisible: true,
-            secondsVisible: false,
+            secondsVisible: true,
         },
     };
     
@@ -112,6 +112,15 @@ function initTradingViewChart() {
         }
     });
     
+    const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+            const { width, height } = entry.contentRect;
+            if (chart) {
+                chart.resize(width, height);
+                chart.timeScale().fitContent();
+            }
+        }
+    });
     resizeObserver.observe(container);
 }
 
