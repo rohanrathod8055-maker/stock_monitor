@@ -855,3 +855,17 @@ main {
     padding-left: 0.5rem;
 }
 
+/* Fullscreen Chart mode override */
+.chart-container.fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important;
+    border-radius: 0 !important;
+    background: #0b0f19 !important;
+    padding: 1.5rem !important;
+    box-sizing: border-box !important;
+}
+

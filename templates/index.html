@@ -107,11 +107,12 @@
                             <button id="tab-chart" class="tab-btn active" onclick="switchWorkspaceTab('chart')" style="background: none; border: none; color: #fff; font-size: 0.85rem; font-weight: 700; padding: 0.25rem 0.5rem; cursor: pointer; border-bottom: 2px solid var(--color-accent); transition: all 0.2s;">CHART</button>
                             <button id="tab-markers" class="tab-btn" onclick="switchWorkspaceTab('markers')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.35rem;">MARKERS <span id="marker-badge" style="background: var(--color-accent); color: #fff; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 10px; font-weight: 800; display: none;">0</span></button>
                         </div>
-                        <div class="timeline-selectors">
+                        <div class="timeline-selectors" style="display: flex; gap: 0.25rem; align-items: center;">
                             <button id="tl-Live" class="timeline-btn active" onclick="changeTimeline('Live')">Live</button>
                             <button id="tl-1m" class="timeline-btn" onclick="changeTimeline('1m')">1 Min</button>
                             <button id="tl-1h" class="timeline-btn" onclick="changeTimeline('1h')">1 Hour</button>
                             <button id="tl-1d" class="timeline-btn" onclick="changeTimeline('1d')">1 Day</button>
+                            <button onclick="toggleFullScreenChart()" class="timeline-btn" style="margin-left: 0.25rem; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; background: rgba(255,255,255,0.05); font-size: 0.85rem;" title="Full Screen Chart (ESC to exit)">🖥️</button>
                         </div>
                     </div>
                     <div class="panel-body" style="display: flex; flex-direction: column;">

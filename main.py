@@ -144,6 +144,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         if body <= 0.05 * rng:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Doji",
                 "sentiment": "neutral",
@@ -153,6 +154,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         elif lower_shadow >= 1.8 * body and upper_shadow <= 0.2 * body and body > 0:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Hammer",
                 "sentiment": "bullish",
@@ -162,6 +164,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         elif upper_shadow >= 1.8 * body and lower_shadow <= 0.2 * body and body > 0:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Shooting Star",
                 "sentiment": "bearish",
@@ -174,6 +177,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         if cl > o and cl_prev < o_prev and cl >= o_prev and o <= cl_prev:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Bullish Engulfing",
                 "sentiment": "bullish",
@@ -183,6 +187,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         elif cl < o and cl_prev > o_prev and cl <= o_prev and o >= cl_prev:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Bearish Engulfing",
                 "sentiment": "bearish",
@@ -194,6 +199,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         if ema9[i] > ema21[i] and ema9[i-1] <= ema21[i-1] and cl > ema9[i]:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Bullish Wave",
                 "sentiment": "bullish",
@@ -203,6 +209,7 @@ def analyze_ohlc_signals(symbol: str, candles: List[Dict]) -> List[Dict]:
         elif ema9[i] < ema21[i] and ema9[i-1] >= ema21[i-1] and cl < ema9[i]:
             alerts.append({
                 "time": dt_str,
+                "candle_time": c["time"],
                 "symbol": symbol,
                 "pattern": "Bearish Wave",
                 "sentiment": "bearish",

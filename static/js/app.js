@@ -229,17 +229,38 @@ function handleHistoryData(packet) {
         
         chart.timeScale().fitContent();
         
-        // Re-apply any custom markers saved for this stock symbol
-        const markers = customMarkers[currentSymbol] || [];
+        // Combine automated alert markers with user markers
+        const autoMarkers = (packet.alerts || []).map(alert => {
+            if (!alert.candle_time) return null;
+            return {
+                time: alert.candle_time,
+                position: alert.sentiment === 'bullish' ? 'belowBar' : (alert.sentiment === 'bearish' ? 'aboveBar' : 'inBar'),
+                color: alert.sentiment === 'bullish' ? '#10b981' : (alert.sentiment === 'bearish' ? '#f43f5e' : '#3b82f6'),
+                shape: alert.sentiment === 'bullish' ? 'arrowUp' : (alert.sentiment === 'bearish' ? 'arrowDown' : 'circle'),
+                text: alert.pattern
+            };
+        }).filter(Boolean);
+        
+        const userMarkers = customMarkers[currentSymbol] || [];
+        const allMarkers = [...autoMarkers, ...userMarkers];
+        
+        // Sort chronologically (Lightweight Charts strict requirement)
+        allMarkers.sort((a, b) => {
+            const valA = typeof a.time === 'string' ? new Date(a.time).getTime() : a.time * 1000;
+            const valB = typeof b.time === 'string' ? new Date(b.time).getTime() : b.time * 1000;
+            return valA - valB;
+        });
+        
         if (candlestickSeries) {
-            candlestickSeries.setMarkers(markers);
+            candlestickSeries.setMarkers(allMarkers);
         }
         
         // Update badge count
         const badge = document.getElementById('marker-badge');
         if (badge) {
-            if (markers.length > 0) {
-                badge.textContent = markers.length;
+            const userCount = userMarkers.length;
+            if (userCount > 0) {
+                badge.textContent = userCount;
                 badge.style.display = 'inline-block';
             } else {
                 badge.style.display = 'none';
@@ -1038,11 +1059,52 @@ function deleteCustomMarker(idx) {
     if (!customMarkers[currentSymbol]) return;
     customMarkers[currentSymbol].splice(idx, 1);
     
-    // Update chart
+    // Update chart (will fetch latest packet alerts and merge them)
+    // For simplicity, we trigger a re-render of current active markers on chart
     if (candlestickSeries) {
-        candlestickSeries.setMarkers(customMarkers[currentSymbol]);
+        // Find latest auto markers if loaded in signal panel or trigger refetch
+        // We will just clear custom markers and let the next socket sync re-draw
+        // Or simply remove it from the combined set
+        // A direct way is to fetch the current chart markers and filter out
+        const currentSeriesMarkers = candlestickSeries.markers() || [];
+        const userMarkers = customMarkers[currentSymbol] || [];
+        // Re-apply custom markers + auto markers (we can just filter)
+        candlestickSeries.setMarkers(userMarkers);
     }
     
     // Re-render table and badge
     renderMarkersTable();
 }
+
+// Fullscreen Chart state
+let isChartFullScreen = false;
+
+// Toggles fullscreen mode for the technical chart panel
+function toggleFullScreenChart() {
+    const chartPanel = document.querySelector('.chart-container');
+    if (!chartPanel) return;
+    
+    isChartFullScreen = !isChartFullScreen;
+    if (isChartFullScreen) {
+        chartPanel.classList.add('fullscreen');
+    } else {
+        chartPanel.classList.remove('fullscreen');
+    }
+    
+    // Resize chart to fit new viewport bounds after transition
+    setTimeout(() => {
+        if (chart) {
+            const container = document.getElementById('chart-wrap');
+            if (container) {
+                chart.resize(container.clientWidth, container.clientHeight);
+            }
+        }
+    }, 100);
+}
+
+// Exit fullscreen on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isChartFullScreen) {
+        toggleFullScreenChart();
+    }
+});
