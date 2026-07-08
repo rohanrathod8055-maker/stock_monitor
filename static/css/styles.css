@@ -869,3 +869,33 @@ main {
     box-sizing: border-box !important;
 }
 
+/* Floating Chart Zoom controls styling */
+.zoom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(11, 15, 25, 0.85) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.zoom-btn:hover {
+    background: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    box-shadow: 0 0 10px var(--color-accent-glow);
+    transform: translateY(-1.5px);
+}
+
+.zoom-btn:active {
+    transform: translateY(0);
+}
+

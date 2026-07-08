@@ -137,8 +137,14 @@
                                 <span>VOLUME: <strong id="detail-vol" style="font-family: var(--font-mono);">0</strong></span>
                             </div>
                             <!-- TradingView Lightweight Charts Container -->
-                            <div class="canvas-wrap" id="chart-wrap" style="flex: 1; min-height: 480px;">
+                            <div class="canvas-wrap" id="chart-wrap" style="flex: 1; min-height: 480px; position: relative;">
                                 <!-- Injected dynamically -->
+                                <!-- Floating Zoom Controls -->
+                                <div class="zoom-controls" style="position: absolute; bottom: 80px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <button onclick="zoomChart('in')" class="zoom-btn" title="Zoom In">+</button>
+                                    <button onclick="zoomChart('out')" class="zoom-btn" title="Zoom Out">-</button>
+                                    <button onclick="zoomChart('reset')" class="zoom-btn" title="Reset Zoom">↺</button>
+                                </div>
                             </div>
                         </div>
                         

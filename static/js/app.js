@@ -818,6 +818,37 @@ function handleLiveAlert(alert) {
         }, 1000);
     }
     
+    // Also draw live alert marker dynamically on the TradingView chart
+    if (candlestickSeries) {
+        const alertTime = lastCandleTime || Math.floor(Date.now() / 1000);
+        const shape = alert.sentiment === 'bullish' ? 'arrowUp' : (alert.sentiment === 'bearish' ? 'arrowDown' : 'circle');
+        const color = alert.sentiment === 'bullish' ? '#10b981' : (alert.sentiment === 'bearish' ? '#f43f5e' : '#3b82f6');
+        const position = alert.sentiment === 'bullish' ? 'belowBar' : (alert.sentiment === 'bearish' ? 'aboveBar' : 'inBar');
+        
+        const liveMarker = {
+            time: alertTime,
+            position: position,
+            color: color,
+            shape: shape,
+            text: alert.pattern
+        };
+        
+        // Fetch current active markers
+        const currentSeriesMarkers = candlestickSeries.markers() || [];
+        const exists = currentSeriesMarkers.some(m => m.time === alertTime && m.text === alert.pattern);
+        
+        if (!exists) {
+            currentSeriesMarkers.push(liveMarker);
+            // Sort chronologically
+            currentSeriesMarkers.sort((a, b) => {
+                const valA = typeof a.time === 'string' ? new Date(a.time).getTime() : a.time * 1000;
+                const valB = typeof b.time === 'string' ? new Date(b.time).getTime() : b.time * 1000;
+                return valA - valB;
+            });
+            candlestickSeries.setMarkers(currentSeriesMarkers);
+        }
+    }
+    
     drawAlertsConsole();
 }
 
@@ -1117,3 +1148,15 @@ document.addEventListener('keydown', (e) => {
         toggleFullScreenChart();
     }
 });
+
+// Programmatically zooms and fits the technical chart timescale
+function zoomChart(direction) {
+    if (!chart) return;
+    if (direction === 'in') {
+        chart.timeScale().zoomToChanges(2);
+    } else if (direction === 'out') {
+        chart.timeScale().zoomToChanges(-2);
+    } else if (direction === 'reset') {
+        chart.timeScale().fitContent();
+    }
+}
