@@ -534,7 +534,7 @@ async def scrape_news_task():
                 try:
                     dt = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %Z")
                     dt_ist = dt + timedelta(hours=5, minutes=30)
-                    published_str = dt_ist.strftime("%d %b, %i:%M %p")
+                    published_str = dt_ist.strftime("%d %b, %I:%M %p")
                 except:
                     published_str = published
                 

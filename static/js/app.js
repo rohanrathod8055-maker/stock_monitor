@@ -234,6 +234,17 @@ function handleHistoryData(packet) {
         if (candlestickSeries) {
             candlestickSeries.setMarkers(markers);
         }
+        
+        // Update badge count
+        const badge = document.getElementById('marker-badge');
+        if (badge) {
+            if (markers.length > 0) {
+                badge.textContent = markers.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
     }
     
     // Render historical signals in Alerts terminal
@@ -317,6 +328,9 @@ function handleMarketUpdate(data) {
 // Updates the TradingView candlestick structure dynamically with 1s ticks
 function updateLiveChartTick(price, volume) {
     if (!candlestickSeries) return;
+    
+    // Stop chart updates/ticking entirely if market is closed
+    if (!isMarketOpen()) return;
     
     const nowSec = Math.floor(Date.now() / 1000);
     
@@ -915,5 +929,120 @@ function addCustomChartMarker() {
         label.textContent = "Click on any chart candle to target the marker there (defaults to latest)";
         label.style.color = "var(--text-secondary)";
     }
+    
+    // Update marker list table and badge
+    renderMarkersTable();
     console.log(`Custom marker added to ${currentSymbol}:`, newMarker);
+}
+// Switch tabs between CHART and MARKERS
+function switchWorkspaceTab(tab) {
+    const chartTabBtn = document.getElementById('tab-chart');
+    const markersTabBtn = document.getElementById('tab-markers');
+    
+    const chartView = document.getElementById('workspace-chart');
+    const markersView = document.getElementById('workspace-markers');
+    
+    if (!chartTabBtn || !markersTabBtn || !chartView || !markersView) return;
+    
+    if (tab === 'chart') {
+        chartTabBtn.className = 'tab-btn active';
+        chartTabBtn.style.borderBottom = '2px solid var(--color-accent)';
+        chartTabBtn.style.color = '#fff';
+        chartTabBtn.style.fontWeight = '700';
+        
+        markersTabBtn.className = 'tab-btn';
+        markersTabBtn.style.borderBottom = 'none';
+        markersTabBtn.style.color = 'var(--text-secondary)';
+        markersTabBtn.style.fontWeight = '600';
+        
+        chartView.style.display = 'flex';
+        markersView.style.display = 'none';
+        
+        // Resize chart to fit full expanded container
+        if (chart) {
+            const container = document.getElementById('chart-wrap');
+            if (container) {
+                chart.resize(container.clientWidth, container.clientHeight);
+            }
+        }
+    } else {
+        markersTabBtn.className = 'tab-btn active';
+        markersTabBtn.style.borderBottom = '2px solid var(--color-accent)';
+        markersTabBtn.style.color = '#fff';
+        markersTabBtn.style.fontWeight = '700';
+        
+        chartTabBtn.className = 'tab-btn';
+        chartTabBtn.style.borderBottom = 'none';
+        chartTabBtn.style.color = 'var(--text-secondary)';
+        chartTabBtn.style.fontWeight = '600';
+        
+        chartView.style.display = 'none';
+        markersView.style.display = 'flex';
+        
+        renderMarkersTable();
+    }
+}
+
+// Render active custom markers in the table
+function renderMarkersTable() {
+    const tbody = document.getElementById('markers-table-body');
+    const stockSpan = document.getElementById('markers-stock-name');
+    if (!tbody || !stockSpan) return;
+    
+    stockSpan.textContent = currentSymbol;
+    tbody.innerHTML = "";
+    
+    const markers = customMarkers[currentSymbol] || [];
+    
+    // Update marker count badge on the tab
+    const badge = document.getElementById('marker-badge');
+    if (badge) {
+        if (markers.length > 0) {
+            badge.textContent = markers.length;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    if (markers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 3rem; font-size: 0.85rem;">No custom markers added for this stock yet.<br><br>Click the CHART tab, click on any candle to target it, and add markers!</td></tr>`;
+        return;
+    }
+    
+    markers.forEach((marker, idx) => {
+        let displayTime = marker.time;
+        if (typeof marker.time === 'number') {
+            const date = new Date(marker.time * 1000);
+            displayTime = date.toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' });
+        }
+        
+        const shapeLabel = marker.shape === 'arrowUp' ? '🟢 Buy Signal' : (marker.shape === 'arrowDown' ? '🔴 Sell Signal' : (marker.shape === 'circle' ? '🔵 Info' : '🟡 Note'));
+        
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.03)';
+        tr.innerHTML = `
+            <td style="padding: 0.75rem; color: #fff;">${displayTime}</td>
+            <td style="padding: 0.75rem; color: #fff; font-weight:600;">${shapeLabel}</td>
+            <td style="padding: 0.75rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${marker.text}</td>
+            <td style="padding: 0.75rem; text-align: right;">
+                <button onclick="deleteCustomMarker(${idx})" style="background: none; border: none; color: var(--color-loss); font-weight: 700; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(244, 63, 94, 0.1)'" onmouseout="this.style.background='none'">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Delete custom marker
+function deleteCustomMarker(idx) {
+    if (!customMarkers[currentSymbol]) return;
+    customMarkers[currentSymbol].splice(idx, 1);
+    
+    // Update chart
+    if (candlestickSeries) {
+        candlestickSeries.setMarkers(customMarkers[currentSymbol]);
+    }
+    
+    // Re-render table and badge
+    renderMarkersTable();
 }
