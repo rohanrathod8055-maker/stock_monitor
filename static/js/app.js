@@ -29,6 +29,9 @@ let activeWorkspaceTab = "chart";
 // Global market data cache
 let marketData = null;
 
+// Track previous AI verdicts to prevent notification spam
+let lastAiVerdicts = {};
+
 // Clock in header
 function updateClock() {
     const clockEl = document.getElementById('live-clock');
@@ -843,6 +846,9 @@ function renderHistoricalAlerts(alertsList) {
 }
 
 function handleLiveAlert(alert) {
+    // Send browser desktop notification for important alerts
+    showDesktopNotification(`⚠️ Live Signal: ${alert.symbol}`, `${alert.pattern}: ${alert.message}`);
+
     const body = document.getElementById('alerts-log-body');
     const badge = document.getElementById('alerts-count');
     if (!body) return;
@@ -941,6 +947,11 @@ function drawAlertsConsole() {
 
 // Start WebSocket connection and chart with defensive safety boundaries
 window.onload = () => {
+    // Request desktop notification permission on load
+    if (window.Notification && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+    
     try {
         initTradingViewChart();
     } catch (e) {
@@ -1362,6 +1373,15 @@ function renderOptionsChain() {
 
 // Render dynamic AI market advisory updates
 function handleAiAdvisory(data) {
+    // Trigger desktop notification only when verdict changes to STRONG BUY or STRONG SELL
+    const prevVerdict = lastAiVerdicts[data.symbol];
+    if (data.verdict !== prevVerdict) {
+        lastAiVerdicts[data.symbol] = data.verdict;
+        if (data.verdict.includes("STRONG")) {
+            showDesktopNotification(`🔥 AI Market Alert: ${data.verdict}!`, `${data.symbol}: ${data.analysis.unfiltered}`);
+        }
+    }
+
     if (data.symbol !== currentSymbol) return;
     
     const verdictEl = document.getElementById('ai-verdict-text');
@@ -1489,4 +1509,20 @@ function showToast(message, isError = false) {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(-50%) translateY(15px)';
     }, 4500);
+}
+
+// Triggers native browser OS notification alerts
+function showDesktopNotification(title, body) {
+    if (!window.Notification) return;
+    
+    if (Notification.permission === 'granted') {
+        try {
+            new Notification(title, {
+                body: body,
+                icon: '/static/img/logo.png'
+            });
+        } catch (e) {
+            console.error("Error creating desktop notification:", e);
+        }
+    }
 }
