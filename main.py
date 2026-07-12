@@ -56,8 +56,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 templates.env.cache = None  # Disable Jinja2 cache to resolve Python 3.14 Starlette cache key TypeErrors
 
-# Global state for news headlines and stocks
-news_headlines: List[Dict] = []
+# Global state for news headlines (Latest, Global, Reddit Rumors) and stocks
+news_cache: Dict[str, List[Dict]] = {
+    "latest": [],
+    "global": [],
+    "reddit": []
+}
 news_lock = asyncio.Lock()
 
 # Mapping of frontend symbol name to Yahoo Finance symbol
@@ -514,26 +518,22 @@ async def sync_live_market_task():
                         if not stock["is_index"]:
                             update_order_book(sym)
 
-# Background scraping task for Multi-Source Google News feed (30s)
-async def scrape_news_task():
-    global news_headlines
-    # Multi-portal search query including Moneycontrol, Economic Times, Livemint, Business Standard, Financial Express, NDTV Profit
-    url = "https://news.google.com/rss/search?q=site:moneycontrol.com+OR+site:economictimes.indiatimes.com+OR+site:financialexpress.com+OR+site:livemint.com+OR+site:business-standard.com+OR+site:ndtvprofit.com+stock+market&hl=en-IN&gl=IN&ceid=IN:en"
-    
+# Background scraping task for Latest Indian Business News (10s)
+async def scrape_latest_news_task():
+    global news_cache
+    url = "https://news.google.com/rss/search?q=site:moneycontrol.com+OR+site:economictimes.indiatimes.com+OR+site:livemint.com+OR+site:ndtvprofit.com+stock+market&hl=en-IN&gl=IN&ceid=IN:en"
     while True:
-        logger.info("Scraping live Indian financial portal feeds...")
-        temp_news = []
-        seen_titles = set()
-        
         try:
+            logger.info("Scraping latest Indian portal news...")
             feed = await asyncio.to_thread(feedparser.parse, url)
-            for entry in feed.entries[:25]:
+            temp = []
+            seen = set()
+            for entry in feed.entries[:20]:
                 title = entry.get("title", "").strip()
-                if not title or title in seen_titles:
+                if not title or title in seen:
                     continue
-                
-                # Format/clean title (remove source suffix e.g. " - Moneycontrol")
-                for suffix in [" - Moneycontrol", " - The Economic Times", " - Financial Express", " - Livemint", " - Business Standard", " - NDTV Profit"]:
+                # Clean title suffixes
+                for suffix in [" - Moneycontrol", " - The Economic Times", " - Livemint", " - NDTV Profit", " - Financial Express", " - Business Standard"]:
                     if suffix in title:
                         title = title.replace(suffix, "")
                 
@@ -552,21 +552,9 @@ async def scrape_news_task():
                 if len(summary_clean) > 160:
                     summary_clean = summary_clean[:157] + "..."
                 
-                source = "Market Alert"
-                if "moneycontrol.com" in link:
-                    source = "Moneycontrol"
-                elif "economictimes" in link:
-                    source = "Economic Times"
-                elif "financialexpress" in link:
-                    source = "Financial Express"
-                elif "livemint" in link:
-                    source = "Livemint"
-                elif "business-standard" in link:
-                    source = "Business Standard"
-                elif "ndtvprofit" in link:
-                    source = "NDTV Profit"
+                source = "Moneycontrol" if "moneycontrol.com" in link else ("Economic Times" if "economictimes" in link else ("Livemint" if "livemint" in link else "Business News"))
                 
-                temp_news.append({
+                temp.append({
                     "title": title,
                     "link": link,
                     "summary": summary_clean,
@@ -574,16 +562,136 @@ async def scrape_news_task():
                     "source": source,
                     "timestamp": datetime.now().isoformat()
                 })
-                seen_titles.add(title)
-        except Exception as e:
-            logger.error(f"Error parsing live news RSS feed: {e}")
-            
-        if temp_news:
-            async with news_lock:
-                news_headlines = temp_news[:30]
-                logger.info(f"Updated news cache with {len(news_headlines)} live headlines.")
+                seen.add(title)
                 
-        await asyncio.sleep(5)
+            if temp:
+                async with news_lock:
+                    news_cache["latest"] = temp[:15]
+        except Exception as e:
+            logger.error(f"Error in scrape_latest_news_task: {e}")
+        await asyncio.sleep(10)
+
+# Background scraping task for Global Business & Geopolitics News (15s)
+async def scrape_global_news_task():
+    global news_cache
+    url = "https://news.google.com/rss/search?q=site:reuters.com+OR+site:bloomberg.com+OR+site:cnbc.com+US+market+OR+Iran+OR+geopolitics+OR+global&hl=en-US&gl=US&ceid=US:en"
+    while True:
+        try:
+            logger.info("Scraping global business and geopolitics news...")
+            feed = await asyncio.to_thread(feedparser.parse, url)
+            temp = []
+            seen = set()
+            for entry in feed.entries[:20]:
+                title = entry.get("title", "").strip()
+                if not title or title in seen:
+                    continue
+                # Clean title suffixes
+                for suffix in [" - Reuters", " - Bloomberg", " - CNBC", " - CNBC TV18"]:
+                    if suffix in title:
+                        title = title.replace(suffix, "")
+                
+                published = entry.get("published", "")
+                try:
+                    dt = datetime.strptime(published, "%a, %d %b %Y %H:%M:%S %Z")
+                    dt_ist = dt + timedelta(hours=5, minutes=30)
+                    published_str = dt_ist.strftime("%d %b, %I:%M %p")
+                except:
+                    published_str = published
+                
+                link = entry.get("link", "#")
+                summary = entry.get("summary", "").strip()
+                from bs4 import BeautifulSoup
+                summary_clean = BeautifulSoup(summary, "html.parser").get_text() if summary else ""
+                if len(summary_clean) > 160:
+                    summary_clean = summary_clean[:157] + "..."
+                
+                source = "Reuters" if "reuters.com" in link else ("Bloomberg" if "bloomberg" in link else ("CNBC" if "cnbc.com" in link else "Global Macro"))
+                
+                temp.append({
+                    "title": title,
+                    "link": link,
+                    "summary": summary_clean,
+                    "published": published_str,
+                    "source": source,
+                    "timestamp": datetime.now().isoformat()
+                })
+                seen.add(title)
+                
+            if temp:
+                async with news_lock:
+                    news_cache["global"] = temp[:15]
+        except Exception as e:
+            logger.error(f"Error in scrape_global_news_task: {e}")
+        await asyncio.sleep(15)
+
+# Background scraping task for Reddit Rumors & Sentiments (15s)
+async def scrape_reddit_rumors_task():
+    global news_cache
+    import urllib.request
+    import xml.etree.ElementTree as ET
+    
+    subreddits = ["IndianStreetBets", "stocks", "worldnews"]
+    
+    while True:
+        try:
+            logger.info("Scraping Reddit communities for rumors and retail sentiment...")
+            temp = []
+            
+            for sub in subreddits:
+                url = f"https://www.reddit.com/r/{sub}/new/.rss?limit=10"
+                req = urllib.request.Request(
+                    url, 
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                )
+                
+                try:
+                    with urllib.request.urlopen(req, timeout=8) as response:
+                        xml_data = response.read()
+                    
+                    root = ET.fromstring(xml_data)
+                    ns = {'atom': 'http://www.w3.org/2005/Atom'}
+                    entries = root.findall("atom:entry", ns)
+                    
+                    for entry in entries[:6]:
+                        title = entry.find("atom:title", ns).text
+                        link_el = entry.find("atom:link", ns)
+                        link = link_el.attrib['href'] if link_el is not None else "#"
+                        updated = entry.find("atom:updated", ns).text
+                        
+                        try:
+                            dt = datetime.fromisoformat(updated.replace('Z', '+00:00'))
+                            dt_ist = dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
+                            published_str = dt_ist.strftime("%d %b, %I:%M %p")
+                        except Exception:
+                            published_str = updated[:16]
+                        
+                        title_lower = title.lower()
+                        sentiment = "neutral"
+                        if any(w in title_lower for w in ["bullish", "profit", "gain", "breakout", "up", "buy", "support", "call", "long"]):
+                            sentiment = "bullish"
+                        elif any(w in title_lower for w in ["bearish", "loss", "crash", "drop", "down", "sell", "war", "conflict", "short", "put", "threat", "sanctions"]):
+                            sentiment = "bearish"
+                            
+                        temp.append({
+                            "title": title,
+                            "link": link,
+                            "summary": f"Discussion on r/{sub} regarding market trends, macroeconomic conditions, or retail sentiment.",
+                            "published": published_str,
+                            "source": f"r/{sub}",
+                            "sentiment": sentiment,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                except Exception as sub_err:
+                    logger.warning(f"Failed to scrape subreddit r/{sub}: {sub_err}")
+            
+            if temp:
+                temp.sort(key=lambda x: x["published"], reverse=True)
+                async with news_lock:
+                    news_cache["reddit"] = temp[:15]
+                    
+        except Exception as e:
+            logger.error(f"Error in scrape_reddit_rumors_task: {e}")
+        await asyncio.sleep(15)
 
 @app.on_event("startup")
 async def startup_event():
@@ -591,7 +699,9 @@ async def startup_event():
     register_daily_startup_task()
     await initialize_market_state()
     asyncio.create_task(sync_live_market_task())
-    asyncio.create_task(scrape_news_task())
+    asyncio.create_task(scrape_latest_news_task())
+    asyncio.create_task(scrape_global_news_task())
+    asyncio.create_task(scrape_reddit_rumors_task())
 
 @app.get("/")
 async def get_dashboard(request: Request):
@@ -664,7 +774,7 @@ async def websocket_endpoint(websocket: WebSocket):
             market_data_copy = dict(market_state)
             
         async with news_lock:
-            initial_news = list(news_headlines)
+            initial_news = {k: list(v) for k, v in news_cache.items()}
             
         initial_packet = {
             "type": "initial",
@@ -692,7 +802,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
                 
             async with news_lock:
-                current_news = list(news_headlines)
+                current_news = {k: list(v) for k, v in news_cache.items()}
                 
             async with market_state_lock:
                 packet = {

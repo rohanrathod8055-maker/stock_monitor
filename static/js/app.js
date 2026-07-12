@@ -19,6 +19,10 @@ let liveCandleVolume = 0;
 // Track historical boundaries to update the last completed candle with incoming ticks
 let lastHistoryCandle = null;
 
+// News Feed category cache and active state
+let activeNewsTab = "latest";
+let newsCacheData = { latest: [], global: [], reddit: [] };
+
 // Clock in header
 function updateClock() {
     const clockEl = document.getElementById('live-clock');
@@ -347,7 +351,11 @@ function handleMarketUpdate(data) {
     renderWatchlist(marketData, currentSymbol);
     renderActiveStockDetail(marketData[currentSymbol] || stockDetail);
     renderMarketDepth(marketData[currentSymbol] || stockDetail);
-    renderNews(news);
+    
+    if (news) {
+        newsCacheData = news;
+        renderNews(newsCacheData[activeNewsTab] || []);
+    }
     
     // Update Candlestick Chart in Real-Time
     const tickPrice = marketData[currentSymbol].price;
@@ -692,7 +700,7 @@ function renderNews(newsList) {
     if (newsList.length === 0) {
         container.innerHTML = `
             <div style="text-align: center; color: var(--text-secondary); margin-top: 2rem; font-size: 0.85rem;">
-                No news articles available.
+                No articles available in this category.
             </div>
         `;
         return;
@@ -702,13 +710,26 @@ function renderNews(newsList) {
     newsList.forEach(item => {
         const card = document.createElement('div');
         card.className = 'news-card';
+        
+        // Render custom sentiment badge for Reddit posts
+        let badgeHtml = "";
+        if (item.sentiment) {
+            const label = item.sentiment.toUpperCase();
+            const color = item.sentiment === 'bullish' ? 'var(--color-gain)' : (item.sentiment === 'bearish' ? 'var(--color-loss)' : 'var(--color-buyer)');
+            const bg = item.sentiment === 'bullish' ? 'rgba(16, 185, 129, 0.1)' : (item.sentiment === 'bearish' ? 'rgba(244, 63, 94, 0.1)' : 'rgba(14, 165, 233, 0.1)');
+            badgeHtml = `<span style="font-size: 0.65rem; font-weight: 700; color: ${color}; background: ${bg}; padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid ${color}33;">${label}</span>`;
+        }
+        
         card.innerHTML = `
-            <div class="news-header">
-                <span class="news-source">${item.source}</span>
+            <div class="news-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span class="news-source" style="font-weight: 700; color: #fff; font-size: 0.75rem;">${item.source}</span>
+                    ${badgeHtml}
+                </div>
                 <span class="news-time">${item.published}</span>
             </div>
-            <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
-            <p class="news-desc">${item.summary}</p>
+            <a href="${item.link}" target="_blank" class="news-title" style="display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; text-decoration: none; color: #fff; line-height: 1.3; transition: color 0.2s;" onmouseover="this.style.color='var(--color-accent)'" onmouseout="this.style.color='#fff'">${item.title}</a>
+            <p class="news-desc" style="font-size: 0.75rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">${item.summary}</p>
         `;
         container.appendChild(card);
     });
@@ -1159,4 +1180,31 @@ function zoomChart(direction) {
     } else if (direction === 'reset') {
         chart.timeScale().fitContent();
     }
+}
+
+// Switch news tabs categories
+function switchNewsTab(tab) {
+    if (tab !== 'latest' && tab !== 'global' && tab !== 'reddit') return;
+    
+    activeNewsTab = tab;
+    
+    // Update tab buttons active states
+    document.querySelectorAll('.news-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'none';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.fontWeight = '600';
+    });
+    
+    const activeBtn = document.getElementById(`news-tab-${tab}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.background = 'var(--color-accent)';
+        activeBtn.style.color = '#fff';
+        activeBtn.style.fontWeight = '700';
+    }
+    
+    // Reset rendering hash to force DOM rebuild
+    currentNewsHash = "";
+    renderNews(newsCacheData[tab] || []);
 }

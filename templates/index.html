@@ -72,7 +72,7 @@
         <section class="center-container">
             <!-- Top Indices row -->
             <div class="indices-grid">
-                <div class="index-card" id="card-NIFTY-50">
+                <div class="index-card" id="card-NIFTY-50" onclick="selectStock('NIFTY 50')">
                     <div class="index-name">NIFTY 50</div>
                     <div class="index-price" id="idx-price-NIFTY-50">24,205.65</div>
                     <div class="index-change-wrap" id="idx-change-NIFTY-50">
@@ -80,7 +80,7 @@
                         <span>(+0.00%)</span>
                     </div>
                 </div>
-                <div class="index-card" id="card-SENSEX">
+                <div class="index-card" id="card-SENSEX" onclick="selectStock('SENSEX')">
                     <div class="index-name">SENSEX</div>
                     <div class="index-price" id="idx-price-SENSEX">77,532.86</div>
                     <div class="index-change-wrap" id="idx-change-SENSEX">
@@ -88,7 +88,7 @@
                         <span>(+0.00%)</span>
                     </div>
                 </div>
-                <div class="index-card" id="card-NIFTY-BANK">
+                <div class="index-card" id="card-NIFTY-BANK" onclick="selectStock('NIFTY BANK')">
                     <div class="index-name">NIFTY BANK</div>
                     <div class="index-price" id="idx-price-NIFTY-BANK">57,762.25</div>
                     <div class="index-change-wrap" id="idx-change-NIFTY-BANK">
@@ -269,15 +269,22 @@
 
         <!-- Right Sidebar: Financial News Feed -->
         <section class="panel news-feed">
-            <div class="panel-header">
-                <h2 class="panel-title">
-                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px;">
-                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
-                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
-                    </svg>
-                    Live Business News
-                </h2>
-                <span class="status-badge" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;" id="news-refresh-indicator">30s Sync</span>
+            <div class="panel-header" style="flex-direction: column; align-items: stretch; gap: 0.75rem; padding: 0.75rem 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h2 class="panel-title" style="font-size: 0.85rem;">
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" style="margin-top: -2px;">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        Live Intelligence
+                    </h2>
+                    <span class="status-badge" style="font-size: 0.6rem; padding: 0.1rem 0.35rem; border-color: rgba(255,255,255,0.06);" id="news-refresh-indicator">10s Sync</span>
+                </div>
+                <div class="news-tabs" style="display: flex; gap: 0.35rem; background: rgba(0,0,0,0.2); padding: 0.2rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <button id="news-tab-latest" class="news-tab-btn active" onclick="switchNewsTab('latest')" style="flex: 1; background: var(--color-accent); border: none; border-radius: 6px; padding: 0.35rem 0.25rem; font-size: 0.7rem; color: #fff; font-weight: 700; cursor: pointer; transition: all 0.2s;">LATEST</button>
+                    <button id="news-tab-global" class="news-tab-btn" onclick="switchNewsTab('global')" style="flex: 1; background: none; border: none; border-radius: 6px; padding: 0.35rem 0.25rem; font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all 0.2s;">GLOBAL</button>
+                    <button id="news-tab-reddit" class="news-tab-btn" onclick="switchNewsTab('reddit')" style="flex: 1; background: none; border: none; border-radius: 6px; padding: 0.35rem 0.25rem; font-size: 0.7rem; color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: all 0.2s;">RUMORS</button>
+                </div>
             </div>
             <div class="panel-body" id="news-feed-body">
                 <div class="news-list" id="news-cards-container">
