@@ -107,6 +107,7 @@
                             <button id="tab-chart" class="tab-btn active" onclick="switchWorkspaceTab('chart')" style="background: none; border: none; color: #fff; font-size: 0.85rem; font-weight: 700; padding: 0.25rem 0.5rem; cursor: pointer; border-bottom: 2px solid var(--color-accent); transition: all 0.2s;">CHART</button>
                             <button id="tab-markers" class="tab-btn" onclick="switchWorkspaceTab('markers')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.35rem;">MARKERS <span id="marker-badge" style="background: var(--color-accent); color: #fff; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 10px; font-weight: 800; display: none;">0</span></button>
                             <button id="tab-fo" class="tab-btn" onclick="switchWorkspaceTab('fo')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s;">F&O CHAIN</button>
+                            <button id="tab-ai" class="tab-btn" onclick="switchWorkspaceTab('ai')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s;">AI ADVISOR</button>
                         </div>
                         <div class="timeline-selectors" style="display: flex; gap: 0.25rem; align-items: center;">
                             <button id="tl-Live" class="timeline-btn active" onclick="changeTimeline('Live')">Live</button>
@@ -242,6 +243,41 @@
                                             <!-- Dynamic options strikes injected here -->
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI ADVISOR VIEW CONTAINER -->
+                        <div id="workspace-ai" style="display: none; flex-direction: column; gap: 1rem; height: 100%; overflow-y: auto; padding-right: 0.5rem;">
+                            <!-- Top Summary Card -->
+                            <div class="ai-verdict-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 1.25rem 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);">Current AI Verdict</span>
+                                    <span id="ai-verdict-text" style="font-size: 1.6rem; font-weight: 800; text-transform: uppercase; color: #3b82f6;">ANALYZING...</span>
+                                </div>
+                                <div style="text-align: right; display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-secondary);">Confidence Score</span>
+                                    <span id="ai-confidence-text" style="font-size: 1.6rem; font-weight: 800; color: var(--color-accent); font-family: var(--font-mono);">--</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Detailed Analysis -->
+                            <div style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                                <h3 style="font-size: 0.9rem; margin: 0; color: #fff; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 0.5rem;">
+                                    <span>🧠</span> live advisor analysis (no bs, unfiltered)
+                                </h3>
+                                <div id="ai-analysis-content" style="font-size: 0.82rem; line-height: 1.6; color: var(--text-primary);">
+                                    Waiting for first live market analysis tick...
+                                </div>
+                            </div>
+                            
+                            <!-- AI Logs History -->
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 0.75rem; min-height: 200px;">
+                                <h3 style="font-size: 0.75rem; margin: 0; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">
+                                    Advisory Log Stream (Updates every 10s)
+                                </h3>
+                                <div id="ai-log-stream" style="flex: 1; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 1rem; font-family: var(--font-mono); font-size: 0.73rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; max-height: 220px; box-sizing: border-box;">
+                                    <!-- Dynamic logs -->
                                 </div>
                             </div>
                         </div>

@@ -211,6 +211,8 @@ function connectWebSocket() {
                 handleHistoryData(data);
             } else if (data.type === "live_alert") {
                 handleLiveAlert(data.alert);
+            } else if (data.type === "ai_advisory") {
+                handleAiAdvisory(data);
             } else {
                 handleMarketUpdate(data);
             }
@@ -1046,17 +1048,19 @@ function switchWorkspaceTab(tab) {
     const chartTabBtn = document.getElementById('tab-chart');
     const markersTabBtn = document.getElementById('tab-markers');
     const foTabBtn = document.getElementById('tab-fo');
+    const aiTabBtn = document.getElementById('tab-ai');
     
     const chartView = document.getElementById('workspace-chart');
     const markersView = document.getElementById('workspace-markers');
     const foView = document.getElementById('workspace-fo');
+    const aiView = document.getElementById('workspace-ai');
     
-    if (!chartTabBtn || !markersTabBtn || !foTabBtn || !chartView || !markersView || !foView) return;
+    if (!chartTabBtn || !markersTabBtn || !foTabBtn || !aiTabBtn || !chartView || !markersView || !foView || !aiView) return;
     
     activeWorkspaceTab = tab;
     
     // Reset all tabs styling
-    [chartTabBtn, markersTabBtn, foTabBtn].forEach(btn => {
+    [chartTabBtn, markersTabBtn, foTabBtn, aiTabBtn].forEach(btn => {
         btn.className = 'tab-btn';
         btn.style.borderBottom = 'none';
         btn.style.color = 'var(--text-secondary)';
@@ -1067,6 +1071,7 @@ function switchWorkspaceTab(tab) {
     chartView.style.display = 'none';
     markersView.style.display = 'none';
     foView.style.display = 'none';
+    aiView.style.display = 'none';
     
     if (tab === 'chart') {
         chartTabBtn.className = 'tab-btn active';
@@ -1096,6 +1101,12 @@ function switchWorkspaceTab(tab) {
         foTabBtn.style.fontWeight = '700';
         foView.style.display = 'flex';
         renderOptionsChain();
+    } else if (tab === 'ai') {
+        aiTabBtn.className = 'tab-btn active';
+        aiTabBtn.style.borderBottom = '2px solid var(--color-accent)';
+        aiTabBtn.style.color = '#fff';
+        aiTabBtn.style.fontWeight = '700';
+        aiView.style.display = 'flex';
     }
 }
 
@@ -1347,4 +1358,77 @@ function renderOptionsChain() {
         
         tbody.appendChild(tr);
     });
+}
+
+// Render dynamic AI market advisory updates
+function handleAiAdvisory(data) {
+    if (data.symbol !== currentSymbol) return;
+    
+    const verdictEl = document.getElementById('ai-verdict-text');
+    const confidenceEl = document.getElementById('ai-confidence-text');
+    const analysisEl = document.getElementById('ai-analysis-content');
+    const logStreamEl = document.getElementById('ai-log-stream');
+    
+    if (!verdictEl || !confidenceEl || !analysisEl || !logStreamEl) return;
+    
+    // Update labels
+    verdictEl.textContent = data.verdict;
+    confidenceEl.textContent = data.confidence + "%";
+    
+    // Style verdict color
+    if (data.verdict.includes("BUY")) {
+        verdictEl.style.color = '#10b981'; // Green
+    } else if (data.verdict.includes("SELL")) {
+        verdictEl.style.color = '#f43f5e'; // Red
+    } else {
+        verdictEl.style.color = '#3b82f6'; // Blue
+    }
+    
+    // Set formatted HTML detailed analysis
+    analysisEl.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+            <div style="background: rgba(255,255,255,0.01); padding: 0.5rem; border-radius: 6px; border-left: 3px solid #6366f1;">
+                <strong style="color: #a5b4fc; display: block; font-size: 0.75rem; text-transform: uppercase;">📊 Chart & Technical Setup</strong>
+                <span style="color: #e5e7eb;">${data.analysis.chart}</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.01); padding: 0.5rem; border-radius: 6px; border-left: 3px solid #10b981;">
+                <strong style="color: #a7f3d0; display: block; font-size: 0.75rem; text-transform: uppercase;">⚖️ Orderbook Bids & Asks Flow</strong>
+                <span style="color: #e5e7eb;">${data.analysis.orderbook}</span>
+            </div>
+            <div style="background: rgba(255,255,255,0.01); padding: 0.5rem; border-radius: 6px; border-left: 3px solid #3b82f6;">
+                <strong style="color: #93c5fd; display: block; font-size: 0.75rem; text-transform: uppercase;">📰 Sentiment & News Catalyst</strong>
+                <span style="color: #e5e7eb;">${data.analysis.news}</span>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 0.8rem; margin-top: 0.4rem;">
+                <strong style="color: #f59e0b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    ⚡ UNFILTERED RECOMMENDATION (NO BS):
+                </strong>
+                <p style="margin: 0.35rem 0 0 0; color: #fff; font-weight: 600; font-size: 0.88rem; line-height: 1.5; font-style: italic;">
+                    "${data.analysis.unfiltered}"
+                </p>
+            </div>
+        </div>
+    `;
+    
+    // Append to live logs list
+    const logItem = document.createElement('div');
+    logItem.style.borderBottom = '1px solid rgba(255, 255, 255, 0.03)';
+    logItem.style.paddingBottom = '0.4rem';
+    logItem.style.lineHeight = '1.4';
+    
+    let verdictColor = '#3b82f6';
+    if (data.verdict.includes("BUY")) verdictColor = '#10b981';
+    if (data.verdict.includes("SELL")) verdictColor = '#f43f5e';
+    
+    logItem.innerHTML = `
+        <span style="color: var(--text-muted); font-size: 0.7rem;">[${data.timestamp}]</span>
+        <strong style="color: ${verdictColor}; font-size: 0.75rem;">${data.verdict}</strong>
+        <span style="color: var(--text-secondary); font-size: 0.7rem;">(${data.confidence}%)</span> - 
+        <span style="color: #d1d5db;">${data.analysis.unfiltered}</span>
+    `;
+    
+    logStreamEl.appendChild(logItem);
+    
+    // Auto scroll to bottom
+    logStreamEl.scrollTop = logStreamEl.scrollHeight;
 }
