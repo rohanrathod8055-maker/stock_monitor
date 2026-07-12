@@ -120,10 +120,15 @@
                     <div class="panel-body" style="display: flex; flex-direction: column; min-height: 0; min-width: 0; flex: 1; overflow: hidden; padding: 1rem;">
                         <!-- CHART VIEW CONTAINER -->
                         <div id="workspace-chart" style="display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; min-width: 0; width: 100%; position: relative;">
-                            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-                                <div class="selected-info">
-                                    <span class="selected-name" id="detail-name">--</span>
-                                    <span class="selected-symbol" id="detail-symbol">--</span>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div class="selected-info">
+                                        <span class="selected-name" id="detail-name">--</span>
+                                        <span class="selected-symbol" id="detail-symbol">--</span>
+                                    </div>
+                                    <button onclick="briefAntigravity()" style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.72rem; color: #a5b4fc; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: all 0.2s;" class="brief-ai-btn" title="Send current stock specs directly to Antigravity AI agent">
+                                        <span>🧠</span> Ask Antigravity
+                                    </button>
                                 </div>
                                 <div class="selected-metrics" style="margin-top: 0; display: flex; align-items: baseline; gap: 0.5rem;">
                                     <span class="selected-price" id="detail-price" style="font-size: 1.5rem;">0.00</span>

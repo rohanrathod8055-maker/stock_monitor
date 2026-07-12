@@ -942,6 +942,29 @@ async def startup_event():
 async def get_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
+@app.post("/api/ask_ai")
+async def ask_ai_endpoint(payload: Dict):
+    symbol = payload.get("symbol", "RELIANCE")
+    try:
+        scratch_dir = r"C:\Users\Rohan\.gemini\antigravity\brain\ce73ae87-a342-4d4f-8970-51d6c5bd05a6\scratch"
+        if not os.path.exists(scratch_dir):
+            os.makedirs(scratch_dir)
+            
+        file_path = os.path.join(scratch_dir, "guidance_request.txt")
+        
+        # Write a briefing prompt
+        briefing = f"User clicked Ask Antigravity for {symbol} at {datetime.now().strftime('%H:%M:%S')}.\n"
+        briefing += f"Please read the latest live_market_state.json and output your unfiltered, no-BS trading advice specifically for {symbol}."
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(briefing)
+            
+        logger.info(f"Antigravity has been briefed for {symbol} via /api/ask_ai.")
+        return {"status": "ok", "message": "Antigravity has been briefed successfully!"}
+    except Exception as e:
+        logger.error(f"Error in ask_ai_endpoint: {e}")
+        return {"status": "error", "message": str(e)}
+
 connected_clients: Set[WebSocket] = set()
 
 @app.websocket("/ws/stocks")

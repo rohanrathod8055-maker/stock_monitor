@@ -1432,3 +1432,61 @@ function handleAiAdvisory(data) {
     // Auto scroll to bottom
     logStreamEl.scrollTop = logStreamEl.scrollHeight;
 }
+
+// Brief Antigravity (AI coding assistant) with latest specs via POST request
+function briefAntigravity() {
+    fetch('/api/ask_ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: currentSymbol })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            showToast('🧠 Antigravity briefed! Ask me to "analyze" in your chat window.');
+        } else {
+            showToast('Briefing failed: ' + data.message, true);
+        }
+    })
+    .catch(err => showToast('Error briefing AI: ' + err.message, true));
+}
+
+// Custom floating toast notification system
+function showToast(message, isError = false) {
+    let toast = document.getElementById('custom-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'custom-toast';
+        toast.style.position = 'fixed';
+        toast.style.bottom = '24px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+        toast.style.background = 'rgba(11, 15, 25, 0.95)';
+        toast.style.backdropFilter = 'blur(10px)';
+        toast.style.border = '1px solid rgba(99, 102, 241, 0.4)';
+        toast.style.borderRadius = '10px';
+        toast.style.padding = '0.8rem 1.6rem';
+        toast.style.color = '#fff';
+        toast.style.fontSize = '0.82rem';
+        toast.style.fontWeight = '600';
+        toast.style.zIndex = '999999';
+        toast.style.boxShadow = '0 12px 30px rgba(0,0,0,0.6)';
+        toast.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        toast.style.pointerEvents = 'none';
+        toast.style.opacity = '0';
+        document.body.appendChild(toast);
+    }
+    toast.style.borderColor = isError ? 'rgba(244, 63, 94, 0.6)' : 'rgba(99, 102, 241, 0.6)';
+    toast.style.color = isError ? '#f43f5e' : '#a5b4fc';
+    toast.textContent = message;
+    
+    // Animate in
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    
+    // Animate out
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(15px)';
+    }, 4500);
+}
