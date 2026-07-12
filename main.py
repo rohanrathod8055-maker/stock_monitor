@@ -706,6 +706,42 @@ async def sync_live_market_task():
                         if not stock["is_index"]:
                             update_order_book(sym)
 
+def fetch_yfinance_news_fallback():
+    try:
+        import yfinance as yf
+        logger.info("Fetching yfinance fallback news for RELIANCE...")
+        ticker = yf.Ticker("RELIANCE.NS")
+        yf_news = ticker.news
+        if not yf_news:
+            return []
+            
+        temp = []
+        for item in yf_news[:15]:
+            title = item.get("title", "").strip()
+            link = item.get("link", "#")
+            source = item.get("publisher", "Yahoo Finance")
+            pub_time = item.get("providerPublishTime", 0)
+            
+            # format date
+            if pub_time:
+                dt = datetime.fromtimestamp(pub_time)
+                published_str = dt.strftime("%d %b, %I:%M %p")
+            else:
+                published_str = ""
+                
+            temp.append({
+                "title": title,
+                "link": link,
+                "summary": title,
+                "published": published_str,
+                "source": source,
+                "timestamp": datetime.now().isoformat()
+            })
+        return temp
+    except Exception as e:
+        logger.error(f"Error fetching yfinance news fallback: {e}")
+        return []
+
 # Background scraping task for Latest Indian Business News (10s)
 async def scrape_latest_news_task():
     global news_cache
@@ -776,6 +812,12 @@ async def scrape_latest_news_task():
             if temp:
                 async with news_lock:
                     news_cache["latest"] = temp[:15]
+            else:
+                logger.info("Google News RSS returned empty. Attempting yfinance fallback news...")
+                fallback_data = await asyncio.to_thread(fetch_yfinance_news_fallback)
+                if fallback_data:
+                    async with news_lock:
+                        news_cache["latest"] = fallback_data
         except Exception as e:
             logger.error(f"Error in scrape_latest_news_task: {e}")
         await asyncio.sleep(10)
@@ -842,6 +884,12 @@ async def scrape_global_news_task():
             if temp:
                 async with news_lock:
                     news_cache["global"] = temp[:15]
+            else:
+                logger.info("Google News global RSS returned empty. Attempting yfinance fallback news...")
+                fallback_data = await asyncio.to_thread(fetch_yfinance_news_fallback)
+                if fallback_data:
+                    async with news_lock:
+                        news_cache["global"] = fallback_data
         except Exception as e:
             logger.error(f"Error in scrape_global_news_task: {e}")
         await asyncio.sleep(15)
