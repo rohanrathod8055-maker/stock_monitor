@@ -26,6 +26,9 @@ let newsCacheData = { latest: [], global: [], reddit: [] };
 // Workspace active tab
 let activeWorkspaceTab = "chart";
 
+// Global market data cache
+let marketData = null;
+
 // Clock in header
 function updateClock() {
     const clockEl = document.getElementById('live-clock');
@@ -356,7 +359,7 @@ function parseTimeString(timeStr) {
 
 // Live tick handlers (1-second intervals)
 function handleMarketUpdate(data) {
-    const marketData = data.market_data;
+    marketData = data.market_data;
     const selectedStock = data.selected_stock;
     const stockDetail = data.selected_stock_detail;
     const news = data.news;
@@ -387,6 +390,7 @@ function handleMarketUpdate(data) {
 // Updates the TradingView candlestick structure dynamically with 1s ticks
 function updateLiveChartTick(price, volume) {
     if (!candlestickSeries) return;
+    if (activeTimeline !== "Live") return; // Prevent live ticks from corrupting historical charts
     
     // Stop chart updates/ticking entirely if market is closed
     if (!isMarketOpen()) return;
