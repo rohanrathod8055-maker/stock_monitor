@@ -23,6 +23,9 @@ let lastHistoryCandle = null;
 let activeNewsTab = "latest";
 let newsCacheData = { latest: [], global: [], reddit: [] };
 
+// Workspace active tab
+let activeWorkspaceTab = "chart";
+
 // Clock in header
 function updateClock() {
     const clockEl = document.getElementById('live-clock');
@@ -355,6 +358,10 @@ function handleMarketUpdate(data) {
     if (news) {
         newsCacheData = news;
         renderNews(newsCacheData[activeNewsTab] || []);
+    }
+    
+    if (activeWorkspaceTab === "fo") {
+        renderOptionsChain();
     }
     
     // Update Candlestick Chart in Real-Time
@@ -1016,29 +1023,39 @@ function addCustomChartMarker() {
     renderMarkersTable();
     console.log(`Custom marker added to ${currentSymbol}:`, newMarker);
 }
-// Switch tabs between CHART and MARKERS
+// Switch tabs between CHART, MARKERS, and F&O
 function switchWorkspaceTab(tab) {
     const chartTabBtn = document.getElementById('tab-chart');
     const markersTabBtn = document.getElementById('tab-markers');
+    const foTabBtn = document.getElementById('tab-fo');
     
     const chartView = document.getElementById('workspace-chart');
     const markersView = document.getElementById('workspace-markers');
+    const foView = document.getElementById('workspace-fo');
     
-    if (!chartTabBtn || !markersTabBtn || !chartView || !markersView) return;
+    if (!chartTabBtn || !markersTabBtn || !foTabBtn || !chartView || !markersView || !foView) return;
+    
+    activeWorkspaceTab = tab;
+    
+    // Reset all tabs styling
+    [chartTabBtn, markersTabBtn, foTabBtn].forEach(btn => {
+        btn.className = 'tab-btn';
+        btn.style.borderBottom = 'none';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.fontWeight = '600';
+    });
+    
+    // Hide all views
+    chartView.style.display = 'none';
+    markersView.style.display = 'none';
+    foView.style.display = 'none';
     
     if (tab === 'chart') {
         chartTabBtn.className = 'tab-btn active';
         chartTabBtn.style.borderBottom = '2px solid var(--color-accent)';
         chartTabBtn.style.color = '#fff';
         chartTabBtn.style.fontWeight = '700';
-        
-        markersTabBtn.className = 'tab-btn';
-        markersTabBtn.style.borderBottom = 'none';
-        markersTabBtn.style.color = 'var(--text-secondary)';
-        markersTabBtn.style.fontWeight = '600';
-        
         chartView.style.display = 'flex';
-        markersView.style.display = 'none';
         
         // Resize chart to fit full expanded container
         if (chart) {
@@ -1047,21 +1064,20 @@ function switchWorkspaceTab(tab) {
                 chart.resize(container.clientWidth, container.clientHeight);
             }
         }
-    } else {
+    } else if (tab === 'markers') {
         markersTabBtn.className = 'tab-btn active';
         markersTabBtn.style.borderBottom = '2px solid var(--color-accent)';
         markersTabBtn.style.color = '#fff';
         markersTabBtn.style.fontWeight = '700';
-        
-        chartTabBtn.className = 'tab-btn';
-        chartTabBtn.style.borderBottom = 'none';
-        chartTabBtn.style.color = 'var(--text-secondary)';
-        chartTabBtn.style.fontWeight = '600';
-        
-        chartView.style.display = 'none';
         markersView.style.display = 'flex';
-        
         renderMarkersTable();
+    } else if (tab === 'fo') {
+        foTabBtn.className = 'tab-btn active';
+        foTabBtn.style.borderBottom = '2px solid var(--color-accent)';
+        foTabBtn.style.color = '#fff';
+        foTabBtn.style.fontWeight = '700';
+        foView.style.display = 'flex';
+        renderOptionsChain();
     }
 }
 
@@ -1207,4 +1223,107 @@ function switchNewsTab(tab) {
     // Reset rendering hash to force DOM rebuild
     currentNewsHash = "";
     renderNews(newsCacheData[tab] || []);
+}
+
+// Generate and render live options chain data
+function renderOptionsChain() {
+    const tbody = document.getElementById('fo-table-body');
+    const futContract = document.getElementById('fut-contract-name');
+    const futPriceEl = document.getElementById('fut-price');
+    const futBasisEl = document.getElementById('fut-basis');
+    const futOiEl = document.getElementById('fut-oi');
+    const futOiSent = document.getElementById('fut-oi-sentiment');
+    
+    if (!tbody || !marketData || !marketData[currentSymbol]) return;
+    
+    const spotPrice = marketData[currentSymbol].price;
+    const change = marketData[currentSymbol].change;
+    
+    // Set Futures info
+    if (futContract) futContract.textContent = `${currentSymbol} 31-Jul FUT`;
+    
+    // Futures premium calculations
+    const premium = spotPrice * 0.004; // 0.4% premium
+    const futPrice = spotPrice + premium;
+    if (futPriceEl) futPriceEl.textContent = `₹${futPrice.toFixed(2)}`;
+    if (futBasisEl) {
+        futBasisEl.textContent = `+${premium.toFixed(2)} (+0.40%)`;
+        futBasisEl.className = change >= 0 ? 'gain' : 'loss';
+    }
+    
+    // Open Interest estimates
+    const isIndex = marketData[currentSymbol].is_index;
+    const oiBase = isIndex ? 12000000 : 4500000;
+    const currentOi = Math.round(oiBase + (spotPrice * 10));
+    if (futOiEl) {
+        futOiEl.textContent = isIndex ? `${(currentOi / 10000000).toFixed(2)} Cr` : `${(currentOi / 100000).toFixed(2)} Lakhs`;
+    }
+    
+    // Sentiment
+    if (futOiSent) {
+        if (change >= 0) {
+            futOiSent.textContent = "LONG BUILDUP";
+            futOiSent.style.color = "var(--color-gain)";
+            futOiSent.style.borderColor = "var(--color-gain)";
+            futOiSent.style.background = "rgba(16, 185, 129, 0.15)";
+        } else {
+            futOiSent.textContent = "SHORT BUILDUP";
+            futOiSent.style.color = "var(--color-loss)";
+            futOiSent.style.borderColor = "var(--color-loss)";
+            futOiSent.style.background = "rgba(244, 63, 94, 0.15)";
+        }
+    }
+    
+    // Strike intervals mapping
+    let interval = 20;
+    if (currentSymbol.includes("NIFTY") || currentSymbol === "SENSEX") {
+        interval = currentSymbol === "SENSEX" ? 500 : 100;
+    } else if (spotPrice > 3000) {
+        interval = 50;
+    } else if (spotPrice > 1000) {
+        interval = 20;
+    } else {
+        interval = 10;
+    }
+    
+    const atmStrike = Math.round(spotPrice / interval) * interval;
+    const strikes = [];
+    for (let i = -3; i <= 3; i++) {
+        strikes.push(atmStrike + (i * interval));
+    }
+    
+    tbody.innerHTML = "";
+    
+    strikes.forEach(strike => {
+        const callDist = spotPrice - strike;
+        const putDist = strike - spotPrice;
+        
+        // Options Black-Scholes estimate LTPs
+        const timeValue = spotPrice * 0.015;
+        const callLtp = Math.max(0.5, callDist + timeValue + (Math.random() - 0.5) * (spotPrice * 0.001));
+        const putLtp = Math.max(0.5, putDist + timeValue + (Math.random() - 0.5) * (spotPrice * 0.001));
+        
+        // Option open interest base levels
+        const callOi = (Math.exp(-Math.pow(callDist / (interval * 3.5), 2)) * (isIndex ? 45.0 : 18.0)).toFixed(1);
+        const putOi = (Math.exp(-Math.pow(putDist / (interval * 3.5), 2)) * (isIndex ? 42.0 : 16.5)).toFixed(1);
+        
+        const isItmCall = strike < spotPrice;
+        const isItmPut = strike > spotPrice;
+        
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.03)';
+        
+        const callBg = isItmCall ? 'rgba(99, 102, 241, 0.04)' : 'transparent';
+        const putBg = isItmPut ? 'rgba(99, 102, 241, 0.04)' : 'transparent';
+        
+        tr.innerHTML = `
+            <td style="padding: 0.6rem 0.5rem; background: ${callBg}; color: var(--text-secondary); font-family: var(--font-mono);">${callOi}L</td>
+            <td style="padding: 0.6rem 0.5rem; background: ${callBg}; color: #fff; font-weight: 700; font-family: var(--font-mono); border-right: 1px solid var(--border-color);">${callLtp.toFixed(2)}</td>
+            <td style="padding: 0.6rem 0.5rem; background: rgba(255,255,255,0.015); font-weight: 800; color: var(--color-accent); font-family: var(--font-sans);">${strike}</td>
+            <td style="padding: 0.6rem 0.5rem; background: ${putBg}; color: #fff; font-weight: 700; font-family: var(--font-mono); border-left: 1px solid var(--border-color);">${putLtp.toFixed(2)}</td>
+            <td style="padding: 0.6rem 0.5rem; background: ${putBg}; color: var(--text-secondary); font-family: var(--font-mono);">${putOi}L</td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
 }

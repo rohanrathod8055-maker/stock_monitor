@@ -106,6 +106,7 @@
                         <div style="display: flex; gap: 1rem; align-items: center;">
                             <button id="tab-chart" class="tab-btn active" onclick="switchWorkspaceTab('chart')" style="background: none; border: none; color: #fff; font-size: 0.85rem; font-weight: 700; padding: 0.25rem 0.5rem; cursor: pointer; border-bottom: 2px solid var(--color-accent); transition: all 0.2s;">CHART</button>
                             <button id="tab-markers" class="tab-btn" onclick="switchWorkspaceTab('markers')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.35rem;">MARKERS <span id="marker-badge" style="background: var(--color-accent); color: #fff; font-size: 0.6rem; padding: 0.1rem 0.35rem; border-radius: 10px; font-weight: 800; display: none;">0</span></button>
+                            <button id="tab-fo" class="tab-btn" onclick="switchWorkspaceTab('fo')" style="background: none; border: none; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; padding: 0.25rem 0.5rem; cursor: pointer; transition: all 0.2s;">F&O CHAIN</button>
                         </div>
                         <div class="timeline-selectors" style="display: flex; gap: 0.25rem; align-items: center;">
                             <button id="tl-Live" class="timeline-btn active" onclick="changeTimeline('Live')">Live</button>
@@ -183,6 +184,62 @@
                                         </thead>
                                         <tbody id="markers-table-body">
                                             <!-- Injected dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- F&O VIEW CONTAINER -->
+                        <div id="workspace-fo" style="display: none; flex-direction: column; gap: 1rem; height: 100%; overflow-y: auto;">
+                            <!-- Futures Info bar -->
+                            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                                <div>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; display: block;">Active Futures Contract</span>
+                                    <span style="font-size: 0.9rem; font-weight: 700; color: #fff;" id="fut-contract-name">RELIANCE 31-Jul FUT</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;">Futures Price</span>
+                                    <span style="font-size: 0.95rem; font-weight: 800; color: var(--color-buyer); font-family: var(--font-mono);" id="fut-price">₹0.00</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;">Premium / Basis</span>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-gain);" id="fut-basis">+5.20</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;">Open Interest (OI)</span>
+                                    <span style="font-size: 0.85rem; font-weight: 700; color: #fff; font-family: var(--font-mono);" id="fut-oi">1.82 Cr</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); display: block;">OI Sentiment</span>
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: #fff; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--color-gain); padding: 0.15rem 0.4rem; border-radius: 4px;" id="fut-oi-sentiment">LONG BUILDUP</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Options Chain Table -->
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem; min-height: 380px;">
+                                <h3 style="font-size: 0.8rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; margin: 0; display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Options Chain (Expiry: 31-Jul-2026)</span>
+                                    <span style="font-size: 0.7rem; color: var(--text-secondary); font-weight: 500;">ITM Contracts Shaded</span>
+                                </h3>
+                                <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; flex: 1;">
+                                    <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 0.8rem;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.02); font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted);">
+                                                <th colspan="2" style="border-right: 1px solid var(--border-color); padding: 0.5rem; color: var(--color-buyer);">CALL OPTIONS (CE)</th>
+                                                <th style="padding: 0.5rem; width: 20%;">STRIKE</th>
+                                                <th colspan="2" style="border-left: 1px solid var(--border-color); padding: 0.5rem; color: var(--color-loss);">PUT OPTIONS (PE)</th>
+                                            </tr>
+                                            <tr style="border-bottom: 1px solid var(--border-color); background: rgba(255, 255, 255, 0.01); font-size: 0.65rem; color: var(--text-secondary);">
+                                                <th style="padding: 0.35rem; width: 20%;">OI (Lakhs)</th>
+                                                <th style="border-right: 1px solid var(--border-color); padding: 0.35rem; width: 20%;">LTP (₹)</th>
+                                                <th style="padding: 0.35rem;">STRIKE PRICE</th>
+                                                <th style="padding: 0.35rem; width: 20%;">LTP (₹)</th>
+                                                <th style="border-left: 1px solid var(--border-color); padding: 0.35rem; width: 20%;">OI (Lakhs)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fo-table-body">
+                                            <!-- Dynamic options strikes injected here -->
                                         </tbody>
                                     </table>
                                 </div>
