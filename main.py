@@ -521,7 +521,7 @@ async def sync_live_market_task():
 # Background scraping task for Latest Indian Business News (10s)
 async def scrape_latest_news_task():
     global news_cache
-    url = "https://news.google.com/rss/search?q=site:moneycontrol.com+OR+site:economictimes.indiatimes.com+OR+site:livemint.com+OR+site:ndtvprofit.com+stock+market&hl=en-IN&gl=IN&ceid=IN:en"
+    url = "https://news.google.com/rss/search?q=(site:moneycontrol.com+OR+site:economictimes.indiatimes.com+OR+site:livemint.com)+AND+(market+OR+Nifty+OR+Sensex+OR+shares+OR+economy+OR+budget+OR+earnings+OR+global+OR+macro)&hl=en-IN&gl=IN&ceid=IN:en"
     while True:
         try:
             logger.info("Scraping latest Indian portal news...")
@@ -574,7 +574,7 @@ async def scrape_latest_news_task():
 # Background scraping task for Global Business & Geopolitics News (15s)
 async def scrape_global_news_task():
     global news_cache
-    url = "https://news.google.com/rss/search?q=site:reuters.com+OR+site:bloomberg.com+OR+site:cnbc.com+US+market+OR+Iran+OR+geopolitics+OR+global&hl=en-US&gl=US&ceid=US:en"
+    url = "https://news.google.com/rss/search?q=(site:reuters.com+OR+site:bloomberg.com+OR+site:cnbc.com)+AND+(US+OR+Iran+OR+market+OR+global+OR+geopolitics+OR+conflict+OR+oil+OR+trade)&hl=en-US&gl=US&ceid=US:en"
     while True:
         try:
             logger.info("Scraping global business and geopolitics news...")
@@ -624,7 +624,7 @@ async def scrape_global_news_task():
             logger.error(f"Error in scrape_global_news_task: {e}")
         await asyncio.sleep(15)
 
-# Background scraping task for Reddit Rumors & Sentiments (15s)
+# Background scraping task for Reddit Rumors & Sentiments (90s interval, sequential delays)
 async def scrape_reddit_rumors_task():
     global news_cache
     import urllib.request
@@ -641,12 +641,15 @@ async def scrape_reddit_rumors_task():
                 url = f"https://www.reddit.com/r/{sub}/new/.rss?limit=10"
                 req = urllib.request.Request(
                     url, 
-                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'}
                 )
                 
                 try:
-                    with urllib.request.urlopen(req, timeout=8) as response:
-                        xml_data = response.read()
+                    def fetch_url():
+                        with urllib.request.urlopen(req, timeout=10) as response:
+                            return response.read()
+                            
+                    xml_data = await asyncio.to_thread(fetch_url)
                     
                     root = ET.fromstring(xml_data)
                     ns = {'atom': 'http://www.w3.org/2005/Atom'}
@@ -669,7 +672,7 @@ async def scrape_reddit_rumors_task():
                         sentiment = "neutral"
                         if any(w in title_lower for w in ["bullish", "profit", "gain", "breakout", "up", "buy", "support", "call", "long"]):
                             sentiment = "bullish"
-                        elif any(w in title_lower for w in ["bearish", "loss", "crash", "drop", "down", "sell", "war", "conflict", "short", "put", "threat", "sanctions"]):
+                        elif any(w in title_lower for w in ["bearish", "loss", "crash", "drop", "down", "sell", "war", "conflict", "short", "put", "threat", "sanctions", "close", "strike"]):
                             sentiment = "bearish"
                             
                         temp.append({
@@ -681,17 +684,27 @@ async def scrape_reddit_rumors_task():
                             "sentiment": sentiment,
                             "timestamp": datetime.now().isoformat()
                         })
+                except urllib.error.HTTPError as he:
+                    if he.code == 429:
+                        logger.warning(f"Reddit rate limit (429) hit for r/{sub}. Backing off.")
+                        await asyncio.sleep(30)
+                    else:
+                        logger.warning(f"HTTP error scraping subreddit r/{sub}: {he}")
                 except Exception as sub_err:
                     logger.warning(f"Failed to scrape subreddit r/{sub}: {sub_err}")
+                
+                # Polite sequential delay
+                await asyncio.sleep(5)
             
             if temp:
                 temp.sort(key=lambda x: x["published"], reverse=True)
                 async with news_lock:
                     news_cache["reddit"] = temp[:15]
+                    logger.info(f"Successfully updated Reddit rumors cache with {len(temp)} items.")
                     
         except Exception as e:
             logger.error(f"Error in scrape_reddit_rumors_task: {e}")
-        await asyncio.sleep(15)
+        await asyncio.sleep(90)
 
 @app.on_event("startup")
 async def startup_event():
