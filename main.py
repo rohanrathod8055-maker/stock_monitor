@@ -619,6 +619,57 @@ def get_ai_advisory_signal(symbol: str) -> Dict:
         "timestamp": datetime.now().strftime("%H:%M:%S")
     }
 
+def write_live_state_to_file(selected_stock: str):
+    """Writes the current live market state (selected stock, orderbook, news, and technicals) to a JSON file for the AI agent to read."""
+    try:
+        import os
+        import json
+        
+        # Scratch directory path
+        scratch_dir = r"C:\Users\Rohan\.gemini\antigravity\brain\ce73ae87-a342-4d4f-8970-51d6c5bd05a6\scratch"
+        if not os.path.exists(scratch_dir):
+            os.makedirs(scratch_dir)
+            
+        file_path = os.path.join(scratch_dir, "live_market_state.json")
+        
+        # Get selected stock data
+        stock = market_state[selected_stock]
+        
+        # Get technical prices
+        prices = list(stock["history_prices"])
+        times = list(stock["history_times"])
+        
+        # Gather latest news and rumors
+        latest_news = news_cache.get("latest", [])[:5]
+        reddit_news = news_cache.get("reddit", [])[:5]
+        global_news = news_cache.get("global", [])[:5]
+        
+        state_data = {
+            "selected_stock": selected_stock,
+            "price": stock["price"],
+            "change": stock["change"],
+            "change_pct": stock["change_pct"],
+            "high": stock["high"],
+            "low": stock["low"],
+            "volume": stock["volume"],
+            "is_index": stock["is_index"],
+            "total_buy_vol": stock.get("total_buy_vol", 0),
+            "total_sell_vol": stock.get("total_sell_vol", 0),
+            "history": [{"time": times[i], "price": prices[i]} for i in range(len(prices))],
+            "news": {
+                "latest": latest_news,
+                "reddit": reddit_news,
+                "global": global_news
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(state_data, f, indent=4)
+            
+    except Exception as e:
+        logger.error(f"Error writing live state to file: {e}")
+
 # Background task to sync baseline values with actual live prices
 async def sync_live_market_task():
     while True:
@@ -1003,6 +1054,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 }
                 
             await websocket.send_json(packet)
+            
+            # Export state to scratch file for the AI Agent
+            write_live_state_to_file(selected_stock)
             
             ai_counter += 1
             if ai_counter >= 10:
