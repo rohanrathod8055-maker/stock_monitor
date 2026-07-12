@@ -73,6 +73,20 @@ function initTradingViewChart() {
             timeVisible: true,
             secondsVisible: true,
         },
+        handleScale: {
+            mouseWheel: true,
+            pinch: true,
+            axisPressedMouseMove: {
+                time: true,
+                price: true,
+            },
+        },
+        handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: true,
+        },
     };
     
     chart = LightweightCharts.createChart(container, chartOptions);
@@ -1195,6 +1209,9 @@ function zoomChart(direction) {
         chart.timeScale().zoomToChanges(-2);
     } else if (direction === 'reset') {
         chart.timeScale().fitContent();
+        if (candlestickSeries) {
+            candlestickSeries.priceScale().applyOptions({ autoScale: true });
+        }
     }
 }
 
